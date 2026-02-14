@@ -34,7 +34,7 @@ class GenerationConfig:
     n: int = 10                  # best-of-N
     temperature: float = 0.6     # enough variation to expose uncertainty
     max_tokens: int = 128        # IPA transcriptions are short
-    concurrent_requests: int = 32  # max parallel API calls in flight
+    concurrent_requests: int = 8   # sweet spot for TRT-LLM max_batch_size=32
     disable_thinking: bool = True  # suppress Qwen3 <think> blocks
 
 
@@ -90,7 +90,7 @@ async def _single_call(
 ) -> str | None:
     """Make a single n=1 API call, return content or None on failure."""
     try:
-        resp = await client.post(api_url, json=payload, timeout=30.0)
+        resp = await client.post(api_url, json=payload, timeout=60.0)
         resp.raise_for_status()
         data = resp.json()
         return data["choices"][0]["message"]["content"]
@@ -135,33 +135,37 @@ async def generate_batch_async(
     names: Sequence[str],
     config: GenerationConfig | None = None,
     progress_callback: callable | None = None,
+    chunk_size: int = 50,
 ) -> list[IPAResult]:
     """Generate IPA transcriptions for a batch of names.
 
-    Sends N independent n=1 requests per name (instead of one n=N request)
-    for compatibility with TRT-LLM's batch size constraints. All requests
-    share a concurrency semaphore to keep the server saturated without
-    overwhelming it.
+    Processes names in chunks to avoid spawning millions of coroutines.
+    Each chunk of `chunk_size` names spawns chunk_size * N requests,
+    gated by the concurrency semaphore. This keeps event loop overhead
+    bounded while maintaining full server saturation.
     """
     if config is None:
         config = GenerationConfig()
 
-    semaphore = asyncio.Semaphore(config.concurrent_requests)
+    results: list[IPAResult] = []
     completed = 0
 
-    async def _process(idx: int, name: str) -> IPAResult:
-        nonlocal completed
-        result = await _generate_one(client, name, config, semaphore)
-        completed += 1
-        if progress_callback and completed % 100 == 0:
-            progress_callback(completed, len(names))
-        return result
-
     async with httpx.AsyncClient() as client:
-        tasks = [_process(i, name) for i, name in enumerate(names)]
-        results = await asyncio.gather(*tasks)
+        semaphore = asyncio.Semaphore(config.concurrent_requests)
 
-    return list(results)
+        for chunk_start in range(0, len(names), chunk_size):
+            chunk = names[chunk_start : chunk_start + chunk_size]
+            chunk_tasks = [
+                _generate_one(client, name, config, semaphore)
+                for name in chunk
+            ]
+            chunk_results = await asyncio.gather(*chunk_tasks)
+            results.extend(chunk_results)
+            completed += len(chunk)
+            if progress_callback and completed % 100 < chunk_size:
+                progress_callback(completed, len(names))
+
+    return results
 
 
 def generate_batch(
