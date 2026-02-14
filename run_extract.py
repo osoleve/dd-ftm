@@ -16,7 +16,12 @@ from dd_ftm.core.pairs import PairConfig, generate_pairs
 
 
 def download_data(dest: Path) -> None:
-    """Download OpenSanctions default collection."""
+    """Download OpenSanctions default collection.
+
+    NOTE: OpenSanctions data is licensed CC BY-NC 4.0.
+    Commercial use of the data or derived outputs requires a separate license.
+    See https://www.opensanctions.org/licensing/
+    """
     dest.parent.mkdir(parents=True, exist_ok=True)
     print(f"Downloading {OPENSANCTIONS_URL}")
     print(f"  → {dest}")

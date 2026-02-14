@@ -1,4 +1,11 @@
-"""Sanctions dataset constants for OpenSanctions FtM data."""
+"""Sanctions dataset constants for OpenSanctions FtM data.
+
+Data license: OpenSanctions data is CC BY-NC 4.0.
+  https://www.opensanctions.org/licensing/
+Commercial use of the data (or outputs derived from it) requires a
+separate license from OpenSanctions. This code (MIT) is independent
+of the data license.
+"""
 
 OPENSANCTIONS_URL = "https://data.opensanctions.org/datasets/latest/default/targets.nested.json"
 
