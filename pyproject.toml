@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dd-ftm"
+version = "0.1.0"
+description = "FollowTheMoney sanctions extraction and IPA tooling for NeMo Data Designer"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+keywords = [
+  "nemo-data-designer",
+  "plugin",
+  "opensanctions",
+  "followthemoney",
+  "ipa",
+  "synthetic-data",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+  "data-designer>=0.5.7",
+  "httpx>=0.28.1",
+  "pandas>=3.0.2",
+  "pyarrow>=24.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/osoleve/dd-ftm"
+Repository = "https://github.com/osoleve/dd-ftm"
+Issues = "https://github.com/osoleve/dd-ftm/issues"
+
+[project.entry-points."data_designer.plugins"]
+name-ipa = "dd_name_ipa.processor.plugin:plugin"
+
+[tool.hatch.build.targets.wheel]
+packages = ["dd_ftm", "dd_name_ipa"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/dd_ftm",
+  "/dd_name_ipa",
+  "/README.md",
+  "/LICENSE",
+  "/run_extract.py",
+  "/run_ipa.py",
+  "/sanctions_pipeline_overview.md",
+]
